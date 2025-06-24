@@ -3,6 +3,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const featuredTitle = document.getElementById("featured-title");
+  const featuredDescription = document.getElementById("featured-description");
+  const featuredSchedule = document.getElementById("featured-schedule");
+  const featuredParticipantsList = document.getElementById("featured-participants-list");
+
+  // Function to render participants as a bulleted list
+  function renderParticipants(participants) {
+    if (!participants || participants.length === 0) {
+      return `<li><em>No participants yet</em></li>`;
+    }
+    return participants.map((p) => `<li>${p}</li>`).join("");
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -10,11 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/activities");
       const activities = await response.json();
 
-      // Clear loading message
+      // Clear loading message and dropdown
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = `<option value="">-- Select an activity --</option>`;
 
       // Populate activities list
-      Object.entries(activities).forEach(([name, details]) => {
+      Object.entries(activities).forEach(([name, details], idx) => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
@@ -25,6 +38,12 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <strong>Participants:</strong>
+            <ul>
+              ${renderParticipants(details.participants)}
+            </ul>
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -34,6 +53,14 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+
+        // Set featured activity (first one)
+        if (idx === 0) {
+          featuredTitle.textContent = name;
+          featuredDescription.textContent = details.description;
+          featuredSchedule.textContent = `Schedule: ${details.schedule}`;
+          featuredParticipantsList.innerHTML = renderParticipants(details.participants);
+        }
       });
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
@@ -62,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities(); // Refresh activities to show new participant
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
